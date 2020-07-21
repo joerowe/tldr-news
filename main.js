@@ -16,23 +16,50 @@ const config = {
   }
 }
 
+const ignoreWords = [
+  "in", "for", "and", "over", "at", "on", "from", "to", "as", "than", "says"
+]
+
+var word = "... i actually have no idea"
+const templates = [
+  `todays main news is something about ${word}`,
+  `blah blah blah ${word} blah blah blah`,
+  `${word} yadda yadda yadda`,
+  `The Man wants you to think about ${word} today`,
+  `idk what the *real* story is, but the smokescreen is something to do with ${word}`,
+  `if you're not sick of hearing about ${word} already then you'll love the news today`,
+  `i swear to god if i hear about ${word} one more time...`,
+  `"${randomCaps(word)}"`,
+  `tldr: ${word}`
+]
+
+function randomCaps(string) {
+  let arr = string.toLowerCase().split("")
+  for (let i = 0; i < arr.length; i++) {
+    if (i % 2 == 0) {
+      arr[i] = arr[i].toUpperCase()
+    }
+  }
+  return arr.join("")
+}
+
 function hasContent(item) {
   return item && item.children && item.children[0] && item.children[0].data
 }
 
-function reduceToTopTen(scraped) {
+function reduceToTop(scraped, num) {
   return Array.from(
     new Set(Object.values(scraped)
       .filter(item => hasContent(item))
       .map(item => item.children[0].data))
-  ).slice(0, 10)
+  ).slice(0, num)
 }
 
 async function getHeadlines(url, rule) {
   try {
     let html = await rp(url)
     let scraped = $(rule, html)
-    return reduceToTopTen(scraped)
+    return reduceToTop(scraped, 3)
   } catch (err) {
     console.log(err)
   }
@@ -68,10 +95,11 @@ async function collateHeadlines() {
   wordCounts = {}
   headlines.forEach(headlineSet => {
     headlineSet.forEach(headline => {
-      let words = headline.split(" ")
+      let words = headline.split(" ").filter(word => !ignoreWords.includes(word))
       words.forEach(word => {
         word = word
-          .replace(/[?|!|'|‘|’|:]+/g, "")
+          .replace(/[^\w\d]/g, "")
+          .replace(/[?|!|'|‘|’|:|,]+/g, "")
           .toLowerCase()
         if (!(word in wordCounts)) {
           wordCounts[word] = 1
@@ -82,17 +110,8 @@ async function collateHeadlines() {
     })
   })
 
-  //TODO this just gets the most frequently occuring words
-  //this is not even good enough joe please. come on. really.
-  //you need to compare each headline to the other sources and
-  //find headlines with the most overlap, then take the most common
-  //words IN SEQUENCE from those headlines
-  //this is baby stuff
-  //what are you four?
-  //also why are you commenting each line here?
-  //use a comment block
-  //god youre such a baby
-  console.log(sortByValue(wordCounts).slice(0, 10))
+  word = sortByValue(wordCounts)[0][1]
+  console.log(templates[Math.floor(Math.random() * templates.length)])
 }
 
 collateHeadlines()
