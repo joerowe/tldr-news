@@ -1,7 +1,7 @@
 const rp = require('request-promise');
 const $ = require('cheerio');
 
-const config = {
+const CONFIG = {
   'theGuardian': {
     'url': 'https://theguardian.com/uk',
     'rule': '.fc-item__headline .js-headline-text'
@@ -17,20 +17,7 @@ const config = {
 }
 
 const ignoreWords = [
-  "in", "for", "and", "over", "at", "on", "from", "to", "as", "than", "says"
-]
-
-var word = "... i actually have no idea"
-const templates = [
-  `todays main news is something about ${word}`,
-  `blah blah blah ${word} blah blah blah`,
-  `${word} yadda yadda yadda`,
-  `The Man wants you to think about ${word} today`,
-  `idk what the *real* story is, but the smokescreen is something to do with ${word}`,
-  `if you're not sick of hearing about ${word} already then you'll love the news today`,
-  `i swear to god if i hear about ${word} one more time...`,
-  `"${randomCaps(word)}"`,
-  `tldr: ${word}`
+  "in", "for", "and", "over", "at", "on", "from", "to", "as", "than", "says", "uk"
 ]
 
 function randomCaps(string) {
@@ -43,14 +30,10 @@ function randomCaps(string) {
   return arr.join("")
 }
 
-function hasContent(item) {
-  return item && item.children && item.children[0] && item.children[0].data
-}
-
 function reduceToTop(scraped, num) {
   return Array.from(
     new Set(Object.values(scraped)
-      .filter(item => hasContent(item))
+      .filter(item => item?.children?.[0]?.data)
       .map(item => item.children[0].data))
   ).slice(0, num)
 }
@@ -88,14 +71,14 @@ function sortByValue(jsonObject) {
 async function collateHeadlines() {
   let headlines = []
   let temp
-  await asyncForEach(Object.values(config), async (configItem) => {
+  await asyncForEach(Object.values(CONFIG), async (configItem) => {
     headlines.push(await getHeadlines(configItem.url, configItem.rule))
   })
 
   wordCounts = {}
   headlines.forEach(headlineSet => {
     headlineSet.forEach(headline => {
-      let words = headline.split(" ").filter(word => !ignoreWords.includes(word))
+      let words = headline.split(" ").filter(word => !ignoreWords.includes(word.toLowerCase()))
       words.forEach(word => {
         word = word
           .replace(/[^\w\d]/g, "")
@@ -111,7 +94,22 @@ async function collateHeadlines() {
   })
 
   word = sortByValue(wordCounts)[0][1]
-  console.log(templates[Math.floor(Math.random() * templates.length)])
+  const TEMPLATES = [
+  `todays main news is something about *${word}*`,
+  `blah blah blah *${word}* blah blah blah`,
+  `_The Man_ wants you to think about *${word}* today`,
+  `idk what the _real_ story is, but the smokescreen is something to do with *${word}*`,
+  `if you're not sick of hearing about *${word}* already then you'll love the news today`,
+  `i swear to god if i hear about *${word}* one more time...`,
+  `"*${randomCaps(word)}*"`,
+  `tldr: *${word}*`,
+  `*${word}*. You got that?`,
+  `It's something about *${word}*`,
+  `everyone's talking about *${word}*!`,
+  `omg did u hear abt *${word}*??`,
+  `knock knock. who's there? *${word}*.`
+  ]
+  console.log(TEMPLATES[Math.floor(Math.random() * TEMPLATES.length)])
 }
 
 collateHeadlines()
