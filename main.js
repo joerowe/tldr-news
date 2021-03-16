@@ -17,7 +17,7 @@ const CONFIG = {
 }
 
 const ignoreWords = [
-  "in", "for", "and", "over", "at", "on", "from", "to", "as", "than", "says", "uk"
+  "in", "for", "and", "over", "at", "on", "from", "to", "as", "than", "says", "uk", "of"
 ]
 
 function randomCaps(string) {
